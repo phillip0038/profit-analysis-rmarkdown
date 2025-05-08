@@ -1,0 +1,65 @@
+---
+title: "Profit Analysis Report"
+author: "Philly B"
+date: "2025-05-08"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r load-and-join}
+# Read both CSV files
+sales_data <- read_csv("sales_data.csv", show_col_types = FALSE)
+products <- read_csv("products.csv", show_col_types = FALSE)
+
+# Add revenue column
+sales_data <- sales_data %>% 
+  mutate(Revenue = Units_Sold * Price)
+
+# Join sales data with product metadata
+full_data <- sales_data %>% 
+  left_join(products, by = "Product")
+
+# Calculate profit and margin
+full_data <- full_data %>% 
+  mutate(
+    Profit = Revenue - (Cost * Units_Sold),
+    Profit_Margin = round(Profit / Revenue, 2)
+  )
+
+full_data
+```
+
+```{r summary}
+profit_summary <- full_data %>% 
+  group_by(Category) %>% 
+  summarize(
+    Total_Revenue = sum(Revenue),
+    Total_Profit = sum(Profit),
+    Avg_Profit_Margin = round(mean(Profit_Margin), 2)
+  )
+
+profit_summary
+```
+
+```{r profit-plot, fig.width=7, fig.height=5}
+ggplot(profit_summary, aes(x = Category, y = Total_Profit, fill = Category)) +
+  geom_col() +
+  geom_text(aes(label = round(Total_Profit, 0)), vjust = -0.3) +
+  labs(
+    title = "Total Profit by Category",
+    x = "Category",
+    y = "Total Profit"
+  ) +
+  theme_minimal() +
+  coord_flip()
+```
+
+## Key Insights
+
+- **Electronics** (iPad) generated the most profit overall.
+- **Accessories** and **Drinkware** had the lowest profit margins.
+- Profit margins reveal pricing strategy opportunities for underperforming categories.
